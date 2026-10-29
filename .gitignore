@@ -1,0 +1,6 @@
+.godot/
+build/
+dist/
+node_modules/
+.vscode/
+*.tmp

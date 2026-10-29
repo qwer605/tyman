@@ -1,0 +1,123 @@
+name: Releases
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: Release operation (run this workflow from main)
+        type: choice
+        default: prepare
+        options:
+          - prepare
+          - publish-stable
+      candidate:
+        description: Exact tested candidate for publish-stable, e.g. v0.1.0-rc.1
+        required: false
+        type: string
+      confirm_tested:
+        description: I tested the selected candidate and approve publishing its exact files
+        type: boolean
+        default: false
+  push:
+    branches: ['release/**']
+
+# One release mutation at a time. A newer run never cancels an asset upload.
+concurrency:
+  group: tyman-releases
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  plan:
+    if: >-
+      github.repository == 'qwer605/tyman' &&
+      (github.event_name == 'push' ||
+      (github.ref == 'refs/heads/main' && inputs.action == 'prepare'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    outputs:
+      plan: ${{ steps.plan.outputs.plan }}
+      sha: ${{ steps.plan.outputs.sha }}
+      controller: ${{ steps.controller.outputs.sha }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: main
+          fetch-depth: 0
+          persist-credentials: false
+      - id: controller
+        run: echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '24'
+      - run: npm ci --prefix .github/release --ignore-scripts --no-fund --no-audit
+      - name: Freeze release scope and calculate candidate
+        id: plan
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node .github/release/release.cjs plan
+
+  build:
+    needs: plan
+    permissions:
+      contents: read
+    uses: ./.github/workflows/build.yml
+    with:
+      ref: ${{ needs.plan.outputs.sha }}
+      artifact: release-candidate-${{ github.run_id }}-${{ github.run_attempt }}
+      plan: ${{ needs.plan.outputs.plan }}
+
+  publish-candidate:
+    needs: [plan, build]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      # Run trusted controller code from main, not from a candidate or artifact.
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ needs.plan.outputs.controller }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '24'
+      - run: npm ci --prefix .github/release --ignore-scripts --no-fund --no-audit
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: release-candidate-${{ github.run_id }}-${{ github.run_attempt }}
+          path: dist
+      - name: Publish immutable candidate with verified checksums
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PLAN_JSON: ${{ needs.plan.outputs.plan }}
+        run: node .github/release/release.cjs publish-rc
+
+  publish-stable:
+    if: >-
+      github.repository == 'qwer605/tyman' &&
+      github.event_name == 'workflow_dispatch' &&
+      github.ref == 'refs/heads/main' && inputs.action == 'publish-stable'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: main
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '24'
+      - run: npm ci --prefix .github/release --ignore-scripts --no-fund --no-audit
+      - name: Promote tested files without rebuilding and link the fixes backport
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node .github/release/release.cjs publish-stable

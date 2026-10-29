@@ -1,0 +1,76 @@
+name: Build game
+
+on:
+  workflow_call:
+    inputs:
+      ref:
+        required: true
+        type: string
+      artifact:
+        required: true
+        type: string
+      plan:
+        default: ''
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ inputs.ref }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '24'
+      - name: Install pinned release tooling
+        run: npm ci --prefix .github/release --ignore-scripts --no-fund --no-audit
+      - name: Test release logic
+        run: npm test --prefix .github/release
+      - name: Read Godot version
+        id: godot
+        run: echo "version=$(cat .godot-version)" >> "$GITHUB_OUTPUT"
+      - uses: chickensoft-games/setup-godot@ac93246ea68518a384c1c280a496e5989341f2f6
+        with:
+          version: ${{ steps.godot.outputs.version }}
+          use-dotnet: false
+          include-templates: true
+          cache: true
+      - name: Import project
+        run: godot --headless --editor --path . --import
+      - name: Test gameplay
+        run: godot --headless --path . --script tests/smoke.gd
+      - name: Export Windows and Linux
+        run: |
+          mkdir -p build/linux build/windows dist
+          godot --headless --path . --export-release Linux build/linux/tyman.x86_64
+          godot --headless --path . --export-release Windows build/windows/tyman.exe
+          test -s build/linux/tyman.x86_64
+          test -s build/linux/tyman.pck
+          test -s build/windows/tyman.exe
+          test -s build/windows/tyman.pck
+      - name: Smoke test exported Linux game
+        run: timeout 30s build/linux/tyman.x86_64 --headless --quit-after 60
+      - name: Package exact source and binaries
+        run: |
+          (cd build/linux && zip -q -r ../../dist/tyman-linux-x86_64.zip .)
+          (cd build/windows && zip -q -r ../../dist/tyman-windows-x86_64.zip .)
+          git archive --format=zip --prefix=tyman/ --output=dist/tyman-source.zip HEAD
+      - name: Record candidate checksums
+        if: inputs.plan != ''
+        env:
+          PLAN_JSON: ${{ inputs.plan }}
+        run: node .github/release/release.cjs manifest
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: ${{ inputs.artifact }}
+          path: dist/
+          if-no-files-found: error
+          retention-days: 14
