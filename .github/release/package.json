@@ -1,0 +1,10 @@
+{
+  "name": "tyman-release-tooling",
+  "private": true,
+  "version": "0.0.0",
+  "scripts": {
+    "test": "node --test test/*.test.cjs"
+  },
+  "engines": { "node": ">=22" },
+  "dependencies": { "release-please": "17.11.2" }
+}
