@@ -30,7 +30,7 @@
 ```sh
 npm ci --prefix .github/release --ignore-scripts
 npm test --prefix .github/release
-dotnet build Tyman.csproj
+dotnet build Tyman.sln
 godot --headless --editor --path . --import
 godot --headless --path . --quit-after 2
 ```

@@ -47,7 +47,7 @@ jobs:
           include-templates: true
           cache: true
       - name: Build C# project
-        run: dotnet build Tyman.csproj
+        run: dotnet build Tyman.sln
       - name: Import project
         run: godot --headless --editor --path . --import
       - name: Smoke test C# startup
@@ -63,6 +63,7 @@ jobs:
           test -s build/linux/tyman.pck
           test -s build/windows/tyman.exe
           test -s build/windows/tyman.pck
+          test -s build/windows/data_*/Tyman.dll
       - name: Smoke test exported Linux game
         run: |
           startup_log=$(timeout 30s build/linux/tyman.x86_64 --headless --quit-after 60)

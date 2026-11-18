@@ -26,6 +26,7 @@ cd tyman
 | Шлях | Призначення |
 | --- | --- |
 | [`project.godot`](../project.godot) | Початкова сцена, рендерер і розмір вікна |
+| [`Tyman.sln`](../Tyman.sln) | Рішення C# для IDE та експорту Godot |
 | [`Tyman.csproj`](../Tyman.csproj) | Версія Godot .NET SDK та параметри компіляції C# |
 | [`scenes/main.tscn`](../scenes/main.tscn) | Кореневий 3D-вузол і підключення `Main.cs` |
 | [`scripts/Main.cs`](../scripts/Main.cs) | Скрипт, який підтверджує запуск C#-сцени |
@@ -53,7 +54,7 @@ $godotExe = 'C:\Tools\Godot\Godot_v4.7.2-stable_mono_win64_console.exe'
 npm.cmd ci --prefix .github/release --ignore-scripts
 npm.cmd test --prefix .github/release
 
-dotnet build Tyman.csproj
+dotnet build Tyman.sln
 & $godotExe --headless --editor --path . --import
 & $godotExe --headless --path . --quit-after 2
 ```
@@ -69,7 +70,7 @@ dotnet build Tyman.csproj
 ```sh
 npm ci --prefix .github/release --ignore-scripts
 npm test --prefix .github/release
-dotnet build Tyman.csproj
+dotnet build Tyman.sln
 godot --headless --editor --path . --import
 godot --headless --path . --quit-after 2
 ```
