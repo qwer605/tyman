@@ -7,7 +7,6 @@
 ## Проєкт
 
 - Репозиторій: [qwer605/tyman](https://github.com/qwer605/tyman).
-- Дошка: [TYMAN, Project №2](https://github.com/users/qwer605/projects/2), власник `qwer605`.
 - Гра на Godot .NET і C#. Версію рушія вказано в `.godot-version`.
 - Запуск, структура й перевірки: [README.md](README.md).
 - Підготовка RC та випуск версій: [docs/releases.md](docs/releases.md).
@@ -16,7 +15,7 @@
 
 Перед створенням або редагуванням Issue прочитай [docs/issues.md](docs/issues.md).
 Це єдине джерело правил щодо українських назв і описів, перевірки дублікатів,
-шаблонів, виконавців, Status, Priority, Severity та пов’язаних гілок.
+шаблонів, міток, виконавців та пов’язаних гілок.
 Шаблони в `.github/ISSUE_TEMPLATE/` мають відповідати цьому стандарту.
 Не створюй окремих копій правил для різних агентів.
 
