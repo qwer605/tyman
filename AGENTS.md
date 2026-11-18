@@ -8,7 +8,7 @@
 
 - Репозиторій: [qwer605/tyman](https://github.com/qwer605/tyman).
 - Дошка: [TYMAN, Project №2](https://github.com/users/qwer605/projects/2), власник `qwer605`.
-- Гра на Godot і GDScript; актуальна версія рушія — у `.godot-version`.
+- Гра на Godot .NET і C#. Версію рушія вказано в `.godot-version`.
 - Запуск, структура й перевірки: [README.md](README.md).
 - Підготовка RC та випуск версій: [docs/releases.md](docs/releases.md).
 

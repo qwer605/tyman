@@ -2,8 +2,7 @@
 
 ## Вимоги
 
-- **Godot 4.7.2 Standard**; для створення збірок — шаблони експорту 4.7.2.
-  У грі використовується GDScript; .NET SDK не потрібен.
+- **Godot 4.7.2 .NET** і **.NET 8 SDK**. Для створення збірок потрібні шаблони експорту **4.7.2 .NET**.
 - **Git** для отримання коду та роботи з гілками.
 - **Node.js 24** і npm для релізної автоматики, як у CI.
   Мінімальна підтримувана версія її пакета — Node.js 22.
@@ -16,23 +15,21 @@
 ```sh
 git clone https://github.com/qwer605/tyman.git
 cd tyman
+git switch experimental
 ```
 
 У менеджері проєктів Godot виберіть **Import**, відкрийте `project.godot`,
 а в редакторі натисніть **F5**. Початкова сцена вже вказана в налаштуваннях.
-Опис механік і керування: [Можливості проєкту](features.md).
-
-Якщо редактор пропонує створити .NET-рішення, для поточної GDScript-гри воно не потрібне.
+Стан стартової сцени описано в [можливостях проєкту](features.md).
 
 ## Структура репозиторію
 
 | Шлях | Призначення |
 | --- | --- |
 | [`project.godot`](../project.godot) | Початкова сцена, рендерер і розмір вікна |
-| [`scenes/main.tscn`](../scenes/main.tscn) | Кореневий вузол і підключення сценарію світу |
-| [`scripts/player.gd`](../scripts/player.gd) | Клавіші, рух, стрибок, камера та повернення на старт |
-| [`scripts/world.gd`](../scripts/world.gd) | Геометрія, світло, кристали й HUD |
-| [`tests/smoke.gd`](../tests/smoke.gd) | Ігрові перевірки без графічного вікна |
+| [`Tyman.csproj`](../Tyman.csproj) | Версія Godot .NET SDK та параметри компіляції C# |
+| [`scenes/main.tscn`](../scenes/main.tscn) | Кореневий 3D-вузол і підключення `Main.cs` |
+| [`scripts/Main.cs`](../scripts/Main.cs) | Скрипт, який підтверджує запуск C#-сцени |
 | [`export_presets.cfg`](../export_presets.cfg) | Профілі експорту Windows/Linux |
 | [`.github/workflows/ci.yml`](../.github/workflows/ci.yml) | Події запуску CI |
 | [`.github/workflows/build.yml`](../.github/workflows/build.yml) | Спільні тести, експорт і пакування |
@@ -42,7 +39,7 @@ cd tyman
 | [`.github/release/test/release.test.cjs`](../.github/release/test/release.test.cjs) | 16 сценаріїв перевірки релізної логіки |
 | [`.github/CODEOWNERS`](../.github/CODEOWNERS) | Власники коду для всіх файлів |
 
-Файли `.gd.uid` зберігаються разом зі сценаріями. Каталоги `.godot/`,
+Файли `.cs.uid` зберігаються разом зі сценаріями. Каталоги `.godot/`,
 `node_modules/`, `build/`, `dist/` і локальні налаштування `.vscode/`
 виключені з Git через [`.gitignore`](../.gitignore).
 
@@ -52,13 +49,14 @@ cd tyman
 до консольного виконуваного файла Godot:
 
 ```powershell
-$godotExe = 'C:\Tools\Godot\Godot_v4.7.2-stable_win64_console.exe'
+$godotExe = 'C:\Tools\Godot\Godot_v4.7.2-stable_mono_win64_console.exe'
 
 npm.cmd ci --prefix .github/release --ignore-scripts
 npm.cmd test --prefix .github/release
 
+dotnet build Tyman.csproj
 & $godotExe --headless --editor --path . --import
-& $godotExe --headless --path . --script tests/smoke.gd
+& $godotExe --headless --path . --quit-after 2
 ```
 
 `npm.cmd` дозволяє викликати npm без запуску PowerShell-скрипта `npm.ps1`.
@@ -67,24 +65,21 @@ npm.cmd test --prefix .github/release
 
 ## Перевірки в Linux або Bash
 
-Ці команди припускають, що Godot 4.7.2 доступний як `godot`:
+Ці команди припускають, що Godot 4.7.2 .NET доступний як `godot`:
 
 ```sh
 npm ci --prefix .github/release --ignore-scripts
 npm test --prefix .github/release
+dotnet build Tyman.csproj
 godot --headless --editor --path . --import
-godot --headless --path . --script tests/smoke.gd
+godot --headless --path . --quit-after 2
 ```
 
-Після успішної перевірки гри виводиться
-`PASS: landing, movement, jump, pickup, respawn`.
-Помилка перевірки повертає ненульовий код завершення.
-Headless-тести перевіряють логіку без зображення; камеру й вигляд сцени
-перевіряйте звичайним запуском.
+Рядок `TYMAN C# ready` підтверджує, що Godot завантажив сцену й виконав C#-метод `_Ready()`.
 
 ## Експорт гри
 
-Спочатку встановіть у редакторі шаблони експорту **Godot 4.7.2**.
+Спочатку встановіть у редакторі шаблони експорту **Godot 4.7.2 .NET**.
 Обидві платформи можна експортувати в CI на Linux.
 
 PowerShell, із раніше визначеною змінною `$godotExe`:
@@ -103,8 +98,7 @@ godot --headless --path . --export-release Linux build/linux/tyman.x86_64
 godot --headless --path . --export-release Windows build/windows/tyman.exe
 ```
 
-Поруч із кожним виконуваним файлом створюється `tyman.pck`. Зберігайте їх разом;
-експортні профілі не вбудовують PCK у бінарний файл.
+Зберігайте весь каталог експорту: виконуваний файл, `tyman.pck` і файли .NET.
 
 На відповідній платформі перевірте запуск збірки без графіки:
 
@@ -127,7 +121,7 @@ Fork — копія всього репозиторію в іншому акау
 git fetch origin
 git switch -c feat/my-feature origin/main
 # Змініть код і перевірте його.
-git add scripts/player.gd
+git add scripts/Main.cs
 git commit -m "feat: add player ability"
 git push -u origin feat/my-feature
 ```
@@ -183,10 +177,10 @@ CI стартує для PR у `main` або `release/*`, а також післ
 
 1. Отримує точний коміт і встановлює Node.js 24.
 2. Встановлює залежності з lock-файла та запускає 16 релізних тестів.
-3. Встановлює Godot і шаблони з `.godot-version`, кешує завантаження.
-4. Імпортує проєкт і запускає п'ять перевірок ігрових механік.
+3. Встановлює .NET SDK, Godot .NET і шаблони з `.godot-version`.
+4. Компілює C#, імпортує проєкт і перевіряє запуск стартової сцени.
 5. Експортує Windows/Linux і перевіряє наявність непорожніх бінарних файлів та PCK.
-6. Запускає Linux-гру headless на 60 кадрів, максимум на 30 секунд.
+6. Запускає Linux-гру headless на 60 кадрів і перевіряє повідомлення від C#-скрипту.
 7. Пакує дві збірки й точні вихідні файли коміту.
 8. Зберігає архіви як артефакт GitHub Actions на **14 днів**.
 
