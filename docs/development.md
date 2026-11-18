@@ -15,7 +15,6 @@
 ```sh
 git clone https://github.com/qwer605/tyman.git
 cd tyman
-git switch experimental
 ```
 
 У менеджері проєктів Godot виберіть **Import**, відкрийте `project.godot`,

@@ -1,6 +1,6 @@
 # Tyman
 
-Стартовий 3D-проєкт на **Godot 4.7.2 .NET** і C# у гілці `experimental`.
+Стартовий 3D-проєкт на **Godot 4.7.2 .NET** і C#.
 Використовує **GL Compatibility** та має профілі експорту Windows і Linux.
 
 ## Швидкий запуск
